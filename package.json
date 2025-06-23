@@ -1,0 +1,17 @@
+{
+  "name": "hopping-amic",
+  "version": "1.0.0",
+  "description": "Projekt gry w Phaser.js z TypeScriptem",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "phaser": "^3.80.1",
+    "typescript": "^5.5.2"
+  }
+}
