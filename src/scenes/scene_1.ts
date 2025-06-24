@@ -20,6 +20,14 @@ export default class scene_1 extends Phaser.Scene {
       frameWidth: 35,
       frameHeight: 35,
     });
+    this.load.spritesheet("jump_right", "assets/jump_right.png", {
+      frameWidth: 35,
+      frameHeight: 35,
+    });
+    this.load.spritesheet("jump_left", "assets/jump_left.png", {
+      frameWidth: 35,
+      frameHeight: 35,
+    });
   }
 
   create() {
@@ -37,7 +45,7 @@ export default class scene_1 extends Phaser.Scene {
       key: "run_right",
       frames: this.anims.generateFrameNumbers("running_amic", {
         start: 0,
-        end: 10,
+        end: 9,
       }),
       frameRate: 15,
       repeat: -1,
@@ -46,7 +54,7 @@ export default class scene_1 extends Phaser.Scene {
       key: "run_left",
       frames: this.anims.generateFrameNumbers("running_left", {
         start: 0,
-        end: 10,
+        end: 9,
       }),
       frameRate: 15,
       repeat: -1,
@@ -59,6 +67,16 @@ export default class scene_1 extends Phaser.Scene {
     this.anims.create({
       key: "stop_left",
       frames: [{ key: "running_left", frame: 0 }],
+      frameRate: 15,
+    });
+    this.anims.create({
+      key: "jump_right",
+      frames: [{ key: "jump_right", frame: 0 }],
+      frameRate: 15,
+    });
+    this.anims.create({
+      key: "jump_left",
+      frames: [{ key: "jump_left", frame: 0 }],
       frameRate: 15,
     });
     this.amic.setCollideWorldBounds(true);
@@ -95,6 +113,18 @@ export default class scene_1 extends Phaser.Scene {
         this.amic.play("stop_right");
       } else {
         this.amic.play("stop_left");
+      }
+    }
+    if (
+      this.cursors.up.isDown && (this.amic.body as Phaser.Physics.Arcade.Body).blocked.down) {
+      this.amic.setVelocityY(-150);
+    }
+    if (!(this.amic.body as Phaser.Physics.Arcade.Body).blocked.down) {
+      if (this.direction_right) {
+        this.amic.play("jump_right");
+      }
+      else {
+        this.amic.play("jump_left");
       }
     }
   }
