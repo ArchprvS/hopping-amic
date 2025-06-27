@@ -7,12 +7,16 @@ export default class scene_1 extends Phaser.Scene {
     direction_right = true;
     ground;
     physicsGround;
+    platforms;
+    chests;
     preload() {
         //console.log('Preload: Ładowanie zasobów...');
         // Przykład: this.load.image('logo', 'assets/logo.png');
         this.load.image("background", "assets/background.png");
         this.load.image("amic", "assets/amic.png");
         this.load.image("ground", "assets/ground.png");
+        this.load.image("platform", "assets/platform.png");
+        this.load.image("chest", "assets/chest.png");
         this.load.spritesheet("running_amic", "assets/running_amic.png", {
             frameWidth: 35,
             frameHeight: 35,
@@ -100,9 +104,19 @@ export default class scene_1 extends Phaser.Scene {
         this.ground.setOrigin(0, 0);
         this.physicsGround = this.add.rectangle(400, 600, 800, 10, 0x000000, 0);
         this.physics.add.existing(this.physicsGround, true);
+        // -- Platforms -- //
+        this.platforms = this.physics.add.staticGroup();
+        this.platforms.create(50, 520, "platform");
+        this.platforms.create(200, 540, "platform");
+        // -- Chests -- //
+        this.chests = this.physics.add.group();
+        this.chests.create(200, 450, "chest");
+        this.chests.getChildren().forEach((chest) => {
+            chest.setDrag(300, 0);
+        });
         //* Camera Zoom *//
         this.cameras.main.setZoom(2);
-        this.cameras.main.startFollow(this.amic, true, 0.1, 0.1);
+        this.cameras.main.startFollow(this.amic, true, 1, 1);
         this.cameras.main.setDeadzone(20, 20);
         //* Adding keyboard events *//
         if (this.input.keyboard) {
@@ -114,9 +128,14 @@ export default class scene_1 extends Phaser.Scene {
         //* Collider *//
         this.amic.setCollideWorldBounds(true);
         this.physics.add.collider(this.amic, this.physicsGround);
+        this.physics.add.collider(this.amic, this.platforms);
+        this.physics.add.collider(this.amic, this.chests);
+        this.physics.add.collider(this.chests, this.physicsGround);
     }
     update(time, delta) {
         // - Controls - //
+        const body = this.amic.body;
+        const onGround = body.blocked.down || body.touching.down;
         if (this.cursors.left.isDown) {
             this.amic.setVelocityX(-100);
             this.direction_right = false;
@@ -129,19 +148,22 @@ export default class scene_1 extends Phaser.Scene {
         }
         else {
             this.amic.setVelocityX(0);
-            if (this.direction_right) {
-                this.amic.play("stop_right");
-            }
-            else {
-                this.amic.play("stop_left");
+            if (onGround) {
+                if (this.direction_right) {
+                    this.amic.play("stop_right");
+                }
+                else {
+                    this.amic.play("stop_left");
+                }
             }
         }
-        if (this.cursors.up.isDown && this.amic.body.blocked.down) {
+        if (this.cursors.up.isDown &&
+            onGround) {
             this.amic.setVelocityY(-150);
         }
-        if (!this.amic.body.blocked.down) {
+        if (!onGround) {
             if (this.direction_right) {
-                if (this.amic.body.velocity.y > 0) {
+                if (body.velocity.y > 0) {
                     this.amic.play("fall_right");
                 }
                 else {
@@ -149,7 +171,7 @@ export default class scene_1 extends Phaser.Scene {
                 }
             }
             else {
-                if (this.amic.body.velocity.y > 0) {
+                if (body.velocity.y > 0) {
                     this.amic.play("fall_left");
                 }
                 else {

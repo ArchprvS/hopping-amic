@@ -8,6 +8,8 @@ export default class scene_1 extends Phaser.Scene {
   private direction_right: boolean = true;
   private ground!: Phaser.GameObjects.TileSprite;
   private physicsGround!: Phaser.GameObjects.Rectangle;
+  private platforms!: Phaser.Physics.Arcade.StaticGroup;
+  private chests!: Phaser.Physics.Arcade.Group;
 
   preload() {
     //console.log('Preload: Ładowanie zasobów...');
@@ -15,6 +17,8 @@ export default class scene_1 extends Phaser.Scene {
     this.load.image("background", "assets/background.png");
     this.load.image("amic", "assets/amic.png");
     this.load.image("ground", "assets/ground.png");
+    this.load.image("platform", "assets/platform.png");
+    this.load.image("chest", "assets/chest.png");
     this.load.spritesheet("running_amic", "assets/running_amic.png", {
       frameWidth: 35,
       frameHeight: 35,
@@ -108,10 +112,24 @@ export default class scene_1 extends Phaser.Scene {
     this.physicsGround = this.add.rectangle(400, 600, 800, 10, 0x000000, 0);
     this.physics.add.existing(this.physicsGround, true);
 
+    // -- Platforms -- //
+
+    this.platforms = this.physics.add.staticGroup();
+    this.platforms.create(50, 520, "platform");
+    this.platforms.create(200, 540, "platform");
+
+    // -- Chests -- //
+
+    this.chests = this.physics.add.group();
+    this.chests.create(200, 450, "chest");
+    this.chests.getChildren().forEach((chest) => {
+      (chest as Phaser.Physics.Arcade.Sprite).setDrag(300, 0);
+    });
+
     //* Camera Zoom *//
 
     this.cameras.main.setZoom(2);
-    this.cameras.main.startFollow(this.amic, true, 0.1, 0.1);
+    this.cameras.main.startFollow(this.amic, true, 1, 1);
     this.cameras.main.setDeadzone(20, 20);
 
     //* Adding keyboard events *//
@@ -126,10 +144,16 @@ export default class scene_1 extends Phaser.Scene {
 
     this.amic.setCollideWorldBounds(true);
     this.physics.add.collider(this.amic, this.physicsGround);
+    this.physics.add.collider(this.amic, this.platforms);
+    this.physics.add.collider(this.amic, this.chests);
+    this.physics.add.collider(this.chests, this.physicsGround);
   }
 
   update(time: number, delta: number) {
     // - Controls - //
+
+    const body = this.amic.body as Phaser.Physics.Arcade.Body;
+    const onGround = body.blocked.down || body.touching.down;
 
     if (this.cursors.left.isDown) {
       this.amic.setVelocityX(-100);
@@ -141,30 +165,33 @@ export default class scene_1 extends Phaser.Scene {
       this.amic.play("run_right", true);
     } else {
       this.amic.setVelocityX(0);
-      if (this.direction_right) {
-        this.amic.play("stop_right");
-      } else {
-        this.amic.play("stop_left");
+      if (onGround) {
+        if (this.direction_right) {
+          this.amic.play("stop_right");
+        } else {
+          this.amic.play("stop_left");
+        }
       }
     }
+
     if (
-      this.cursors.up.isDown && (this.amic.body as Phaser.Physics.Arcade.Body).blocked.down) {
+      this.cursors.up.isDown &&
+      onGround
+    ) {
       this.amic.setVelocityY(-150);
     }
-    if (!(this.amic.body as Phaser.Physics.Arcade.Body).blocked.down) {
+
+    if (!onGround) {
       if (this.direction_right) {
-        if ((this.amic.body as Phaser.Physics.Arcade.Body).velocity.y > 0) {
+        if (body.velocity.y > 0) {
           this.amic.play("fall_right");
-        }
-        else {
+        } else {
           this.amic.play("jump_right");
         }
-      }
-      else {
-        if ((this.amic.body as Phaser.Physics.Arcade.Body).velocity.y > 0) {
+      } else {
+        if (body.velocity.y > 0) {
           this.amic.play("fall_left");
-        }
-        else {
+        } else {
           this.amic.play("jump_left");
         }
       }
