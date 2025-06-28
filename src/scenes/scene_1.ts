@@ -10,15 +10,18 @@ export default class scene_1 extends Phaser.Scene {
   private physicsGround!: Phaser.GameObjects.Rectangle;
   private platforms!: Phaser.Physics.Arcade.StaticGroup;
   private chests!: Phaser.Physics.Arcade.Group;
+  private bones!: Phaser.Physics.Arcade.Group;
 
   preload() {
-    //console.log('Preload: Ładowanie zasobów...');
-    // Przykład: this.load.image('logo', 'assets/logo.png');
     this.load.image("background", "assets/background.png");
     this.load.image("amic", "assets/amic.png");
     this.load.image("ground", "assets/ground.png");
     this.load.image("platform", "assets/platform.png");
     this.load.image("chest", "assets/chest.png");
+    this.load.spritesheet("bone", "assets/bone.png", {
+      frameWidth: 25,
+      frameHeight: 25,
+    });
     this.load.spritesheet("running_amic", "assets/running_amic.png", {
       frameWidth: 35,
       frameHeight: 35,
@@ -55,7 +58,7 @@ export default class scene_1 extends Phaser.Scene {
 
     // -- Amic -- //
 
-    this.amic = this.physics.add.sprite(100, 500, "amic");
+    this.amic = this.physics.add.sprite(50, 560, "amic");
     this.anims.create({
       key: "run_right",
       frames: this.anims.generateFrameNumbers("running_amic", {
@@ -121,9 +124,30 @@ export default class scene_1 extends Phaser.Scene {
     // -- Chests -- //
 
     this.chests = this.physics.add.group();
-    this.chests.create(200, 450, "chest");
+    this.chests.create(200, 560, "chest");
     this.chests.getChildren().forEach((chest) => {
       (chest as Phaser.Physics.Arcade.Sprite).setDrag(300, 0);
+    });
+
+    // -- Bones -- //
+
+    this.bones = this.physics.add.group({
+      key: "bone",
+      repeat: 11,
+      setXY: { x: 12, y: 400, stepX: 70 },
+    });
+    this.anims.create({
+      key: "bonespin",
+      frames: this.anims.generateFrameNumbers("bone", {
+        start: 0,
+        end: 9,
+      }),
+      frameRate: 15,
+      repeat: -1,
+    });
+
+    this.bones.getChildren().forEach((bone) => {
+      (bone as Phaser.Physics.Arcade.Sprite).play("bonespin");
     });
 
     //* Camera Zoom *//
@@ -147,6 +171,11 @@ export default class scene_1 extends Phaser.Scene {
     this.physics.add.collider(this.amic, this.platforms);
     this.physics.add.collider(this.amic, this.chests);
     this.physics.add.collider(this.chests, this.physicsGround);
+    this.physics.add.collider(this.bones, this.platforms);
+    this.physics.add.collider(this.bones, this.physicsGround);
+    this.physics.add.collider(this.bones, this.chests);
+
+    this.physics.add.overlap(this.amic, this.bones, this.collectBone, undefined, this);
   }
 
   update(time: number, delta: number) {
@@ -174,10 +203,7 @@ export default class scene_1 extends Phaser.Scene {
       }
     }
 
-    if (
-      this.cursors.up.isDown &&
-      onGround
-    ) {
+    if (this.cursors.up.isDown && onGround) {
       this.amic.setVelocityY(-150);
     }
 
@@ -195,6 +221,12 @@ export default class scene_1 extends Phaser.Scene {
           this.amic.play("jump_left");
         }
       }
+    }
+  }
+
+  collectBone(player: any, bone: any) {
+    if ('disableBody' in bone && typeof bone.disableBody === 'function') {
+      bone.disableBody(true, true);
     }
   }
 }
